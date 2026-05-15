@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jio Survey Dashboard — Berhampur Area</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #060C1A;
+  --surface: #0D1626;
+  --surface2: #121E33;
+  --border: rgba(255,255,255,0.07);
+  --blue: #2E7EF7;
+  --blue-dim: rgba(46,126,247,0.15);
+  --cyan: #00D4FF;
+  --green: #00E5A0;
+  --green-dim: rgba(0,229,160,0.12);
+  --orange: #FF8C42;
+  --orange-dim: rgba(255,140,66,0.12);
+  --red: #FF4B6E;
+  --red-dim: rgba(255,75,110,0.12);
+  --purple: #A855F7;
+  --text: #E8F0FF;
+  --text2: #7A90B8;
+  --text3: #3D5070;
+  --jio-blue: #2E7EF7;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── GRID BG ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(46,126,247,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(46,126,247,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(6,12,26,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.topbar-left { display: flex; align-items: center; gap: 14px; }
+.jio-pill {
+  background: var(--blue);
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+.topbar-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.topbar-sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+.live-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--green-dim);
+  border: 1px solid rgba(0,229,160,0.25);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 11px; font-weight: 600; color: var(--green);
+}
+.live-dot {
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse 1.4s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+.refresh-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-family: var(--font);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: all 0.15s;
+}
+.refresh-btn:hover { border-color: var(--blue); color: var(--blue); }
+.refresh-btn.spinning .ri { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#lastUpdated { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+
+/* ── CONFIG BANNER ── */
+.config-banner {
+  margin: 20px 28px 0;
+  background: rgba(255,140,66,0.08);
+  border: 1px solid rgba(255,140,66,0.25);
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 12px;
+  position: relative; z-index: 1;
+}
+.config-banner input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px 12px;
+  outline: none;
+}
+.config-banner input:focus { border-color: var(--blue); }
+.config-banner input::placeholder { color: var(--text3); }
+.config-apply-btn {
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-family: var(--font);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.config-apply-btn:hover { opacity: 0.85; }
+.config-label { font-size: 12px; color: var(--orange); white-space: nowrap; font-weight: 600; }
+
+/* ── DATE FILTER ── */
+.filter-bar {
+  margin: 16px 28px 0;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  position: relative; z-index: 1;
+}
+.filter-chip {
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 12px; font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+  transition: all 0.15s;
+}
+.filter-chip.active, .filter-chip:hover {
+  background: var(--blue-dim);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+.date-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.date-input:focus { outline: none; border-color: var(--blue); }
+.filter-sep { color: var(--text3); font-size: 12px; }
+
+/* ── MAIN GRID ── */
+.main { padding: 20px 28px 40px; position: relative; z-index: 1; }
+
+/* ── KPI ROW ── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 14px 14px 0 0;
+}
+.kpi-card.blue::before { background: var(--blue); }
+.kpi-card.green::before { background: var(--green); }
+.kpi-card.orange::before { background: var(--orange); }
+.kpi-card.cyan::before { background: var(--cyan); }
+.kpi-card.purple::before { background: var(--purple); }
+.kpi-card.red::before { background: var(--red); }
+
+.kpi-icon { font-size: 18px; margin-bottom: 10px; }
+.kpi-val {
+  font-size: 28px; font-weight: 700;
+  line-height: 1;
+  font-family: var(--mono);
+  margin-bottom: 4px;
+}
+.kpi-card.blue .kpi-val { color: var(--blue); }
+.kpi-card.green .kpi-val { color: var(--green); }
+.kpi-card.orange .kpi-val { color: var(--orange); }
+.kpi-card.cyan .kpi-val { color: var(--cyan); }
+.kpi-card.purple .kpi-val { color: var(--purple); }
+.kpi-card.red .kpi-val { color: var(--red); }
+.kpi-label { font-size: 11px; color: var(--text2); font-weight: 500; }
+.kpi-sub { font-size: 10px; color: var(--text3); margin-top: 3px; }
+
+/* ── CHART GRID ── */
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.chart-full { grid-column: 1 / -1; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.panel-header {
+  padding: 16px 20px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.panel-badge {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 10px;
+  color: var(--text2);
+  font-family: var(--mono);
+}
+.panel-body { padding: 16px 20px; }
+.chart-wrap { position: relative; }
+
+/* ── TAB SWITCHER ── */
+.tab-row { display: flex; gap: 4px; margin-bottom: 14px; }
+.tab-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-family: var(--font);
+  font-size: 11px; font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tab-btn.active { background: var(--blue-dim); border-color: var(--blue); color: var(--blue); }
+
+/* ── TABLE ── */
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-table th {
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--text3);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: var(--text);
+  vertical-align: middle;
+}
+.data-table tr:hover td { background: rgba(46,126,247,0.04); }
+.data-table tr:last-child td { border-bottom: none; }
+
+.rank-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  font-size: 10px; font-weight: 700;
+  font-family: var(--mono);
+}
+.rank-1 { background: rgba(255,200,0,0.15); color: #FFD700; }
+.rank-2 { background: rgba(180,180,180,0.12); color: #C0C0C0; }
+.rank-3 { background: rgba(180,120,0,0.12); color: #CD7F32; }
+.rank-n { background: var(--surface2); color: var(--text3); }
+
+.bar-cell { display: flex; align-items: center; gap: 8px; }
+.mini-bar-wrap { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; min-width: 60px; }
+.mini-bar { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1); }
+.bar-num { font-family: var(--mono); font-size: 11px; color: var(--text2); min-width: 24px; text-align: right; }
+
+.tag {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10px; font-weight: 600;
+}
+.tag-yes { background: var(--green-dim); color: var(--green); }
+.tag-no  { background: var(--red-dim); color: var(--red); }
+
+/* ── RECENT FEED ── */
+.feed-item {
+  display: flex; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  align-items: flex-start;
+}
+.feed-item:last-child { border-bottom: none; }
+.feed-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-top: 5px;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px var(--green);
+}
+.feed-name { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.feed-meta { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.feed-time { font-size: 10px; color: var(--text3); font-family: var(--mono); margin-left: auto; white-space: nowrap; }
+.feed-tags { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
+
+/* ── GEO LINK ── */
+.geo-link {
+  color: var(--cyan);
+  text-decoration: none;
+  font-size: 10px;
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--mono);
+}
+.geo-link:hover { text-decoration: underline; }
+
+/* ── LOADING ── */
+.loading-overlay {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 200;
+  transition: opacity 0.4s;
+}
+.loading-overlay.hidden { opacity: 0; pointer-events: none; }
+.loader-ring {
+  width: 48px; height: 48px;
+  border: 3px solid var(--surface2);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+.loader-text { color: var(--text2); font-size: 13px; }
+
+/* ── EMPTY ── */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+}
+.empty-state .ei { font-size: 32px; margin-bottom: 10px; }
+.empty-state p { font-size: 12px; }
+
+/* ── ERROR TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--surface2);
+  border: 1px solid var(--red);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--red);
+  z-index: 300;
+  display: none;
+  max-width: 320px;
+}
+.toast.show { display: block; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .chart-grid { grid-template-columns: 1fr; }
+  .chart-full { grid-column: auto; }
+  .topbar { padding: 0 16px; }
+  .main, .filter-bar, .config-banner { padding-left: 16px; padding-right: 16px; margin-left: 0; margin-right: 0; }
+}
+@media (max-width: 560px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .topbar-title { font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader-ring"></div>
+  <div class="loader-text" id="loadingText">Connecting to Google Sheets…</div>
+</div>
+
+<!-- ERROR TOAST -->
+<div class="toast" id="errorToast"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="jio-pill">Jio</span>
+    <div>
+      <div class="topbar-title">Survey Live Dashboard</div>
+      <div class="topbar-sub">Berhampur Area — Real-time Field Intelligence</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="live-pill"><div class="live-dot"></div>LIVE</div>
+    <span id="lastUpdated">—</span>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
+      <span class="ri">↻</span> Refresh
+    </button>
+  </div>
+</div>
+
+<!-- Sheet URL is hardcoded in the script below -->
+
+<!-- DATE FILTER -->
+<div class="filter-bar">
+  <span style="font-size:11px;color:var(--text3);font-weight:600;">FILTER:</span>
+  <button class="filter-chip active" onclick="setFilter('today', this)">Today</button>
+  <button class="filter-chip" onclick="setFilter('yesterday', this)">Yesterday</button>
+  <button class="filter-chip" onclick="setFilter('week', this)">This Week</button>
+  <button class="filter-chip" onclick="setFilter('month', this)">This Month</button>
+  <button class="filter-chip" onclick="setFilter('all', this)">All Time</button>
+  <span class="filter-sep">|</span>
+  <span style="font-size:11px;color:var(--text3);">Custom:</span>
+  <input type="date" class="date-input" id="fromDate">
+  <span style="font-size:11px;color:var(--text3);">to</span>
+  <input type="date" class="date-input" id="toDate">
+  <button class="filter-chip" onclick="applyCustomDate()">Apply</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi-card blue">
+      <div class="kpi-icon">📋</div>
+      <div class="kpi-val" id="kpi_total">—</div>
+      <div class="kpi-label">Total Surveys</div>
+      <div class="kpi-sub" id="kpi_total_sub">Loading…</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-icon">🌐</div>
+      <div class="kpi-val" id="kpi_airfiber">—</div>
+      <div class="kpi-label">AirFiber Leads</div>
+      <div class="kpi-sub" id="kpi_airfiber_sub">Interested = Yes</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-icon">📲</div>
+      <div class="kpi-val" id="kpi_mnp">—</div>
+      <div class="kpi-label">MNP Leads</div>
+      <div class="kpi-sub" id="kpi_mnp_sub">Interested = Yes</div>
+    </div>
+    <div class="kpi-card cyan">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-val" id="kpi_jpams">—</div>
+      <div class="kpi-label">Active JPAMs</div>
+      <div class="kpi-sub">Submitted today</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-icon">📍</div>
+      <div class="kpi-val" id="kpi_geo">—</div>
+      <div class="kpi-label">Geotagged</div>
+      <div class="kpi-sub">GPS captured</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-icon">📅</div>
+      <div class="kpi-val" id="kpi_appt">—</div>
+      <div class="kpi-label">Appointments</div>
+      <div class="kpi-sub">Scheduled</div>
+    </div>
+  </div>
+
+  <!-- ROW 2: JC chart + Trend -->
+  <div class="chart-grid">
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">🏢 JC-wise Survey Count</span>
+        <span class="panel-badge" id="jcBadge">0 JCs</span>
+      </div>
+      <div class="panel-body">
+        <div class="chart-wrap" style="height:260px;">
+          <canvas id="jcChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">📈 Daily Trend (Last 14 Days)</span>
+      </div>
+      <div class="panel-body">
+        <div class="chart-wrap" style="height:260px;">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 3: JP table + Lead breakdown -->
+  <div class="chart-grid">
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">👤 JP-wise Performance</span>
+        <div class="tab-row" style="margin:0;">
+          <button class="tab-btn active" onclick="jpTab('surveys',this)">Surveys</button>
+          <button class="tab-btn" onclick="jpTab('airfiber',this)">AirFiber</button>
+          <button class="tab-btn" onclick="jpTab('mnp',this)">MNP</button>
+        </div>
+      </div>
+      <div class="panel-body" style="padding-top:12px;max-height:320px;overflow-y:auto;">
+        <table class="data-table" id="jpTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>JP Name</th>
+              <th>JC</th>
+              <th>Count</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody id="jpTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">🎯 Lead Breakdown</span>
+      </div>
+      <div class="panel-body">
+        <div class="chart-wrap" style="height:200px;">
+          <canvas id="leadChart"></canvas>
+        </div>
+        <div style="margin-top:16px;" id="leadSummary"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 4: Employee daily table + Recent feed -->
+  <div class="chart-grid">
+
+    <div class="panel chart-full" style="margin-bottom:16px;">
+      <div class="panel-header">
+        <span class="panel-title">📊 Employee-wise Daily Survey Detail</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="searchEmp" placeholder="Search by name / JC…"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+                   color:var(--text);font-family:var(--font);font-size:11px;padding:4px 10px;outline:none;width:180px;">
+          <span class="panel-badge" id="empBadge">0 records</span>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="empTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>JP Name</th>
+              <th>JPAM ID</th>
+              <th>JC</th>
+              <th>Village/Town</th>
+              <th>Customer</th>
+              <th>Mobile</th>
+              <th>AirFiber</th>
+              <th>MNP</th>
+              <th>Appt Date</th>
+              <th>GPS</th>
+            </tr>
+          </thead>
+          <tbody id="empTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 5: Recent + Product awareness -->
+  <div class="chart-grid">
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">⚡ Recent Submissions</span>
+        <span class="panel-badge" id="recentBadge">Live</span>
+      </div>
+      <div class="panel-body" id="recentFeed" style="max-height:360px;overflow-y:auto;"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">📡 Product Awareness</span>
+        <span class="panel-badge">% of surveys</span>
+      </div>
+      <div class="panel-body">
+        <div class="chart-wrap" style="height:300px;">
+          <canvas id="awarenessChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG — paste your published CSV URL here
+// ═══════════════════════════════════════════
+// ▶▶ PASTE YOUR GOOGLE SHEET PUBLISHED CSV URL BETWEEN THE QUOTES BELOW ◀◀
+let SHEET_CSV_URL = "https://script.google.com/macros/s/AKfycbyS8iSW9NsNdAADYsnk_DL3cQxEZOVRMcW3W9Q4ggrl4TjnyXLJqmFLj8aLM3Jhi4ivxQ/exec";
+
+// Column mapping (0-indexed, matching the 22-column sheet)
+const COL = {
+  timestamp: 0, date: 1, customer_name: 2, mobile: 3,
+  m1: 4, m2: 5, m3: 6, t1: 7, t2: 8, t3: 9,
+  airfiber: 10, mnp: 11, appt_date: 12,
+  geo_lat: 13, geo_lng: 14, geo_acc: 15, geo_url: 16, geo_status: 17,
+  village: 18, jpam_id: 19, jp_name: 20, jc_name: 21
+};
+
+let allData = [];
+let filteredData = [];
+let activeFilter = 'today';
+let jpMetric = 'surveys';
+let charts = {};
+
+// ── DATE UTILS ──
+function parseDate(str) {
+  if (!str) return null;
+  const d = new Date(str);
+  return isNaN(d) ? null : d;
+}
+function fmt(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short' });
+}
+function fmtTime(d) {
+  if (!d) return '—';
+  return d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+}
+function today() { const d=new Date(); d.setHours(0,0,0,0); return d; }
+function yesterday() { const d=today(); d.setDate(d.getDate()-1); return d; }
+function startOfWeek() { const d=today(); d.setDate(d.getDate()-d.getDay()); return d; }
+function startOfMonth() { const d=today(); d.setDate(1); return d; }
+function daysAgo(n) { const d=today(); d.setDate(d.getDate()-n); return d; }
+
+function applyFilter(data, filter, from, to) {
+  const t = today();
+  const yd = yesterday();
+  return data.filter(row => {
+    const d = parseDate(row[COL.date]);
+    if (!d) return false;
+    const dc = new Date(d); dc.setHours(0,0,0,0);
+    if (filter === 'today')     return dc.getTime() === t.getTime();
+    if (filter === 'yesterday') return dc.getTime() === yd.getTime();
+    if (filter === 'week')      return dc >= startOfWeek();
+    if (filter === 'month')     return dc >= startOfMonth();
+    if (filter === 'custom')    return dc >= from && dc <= to;
+    return true; // all
+  });
+}
+
+// ── SHEET CONFIG ──
+function applySheetUrl() {
+  const url = document.getElementById('sheetUrlInput').value.trim();
+  if (!url) return showToast('Please paste a valid Google Sheets CSV URL');
+  SHEET_CSV_URL = url;
+  localStorage.setItem('jio_sheet_url', url);
+  document.getElementById('configBanner').style.display = 'none';
+  loadData();
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  filteredData = applyFilter(allData, f);
+  render();
+}
+function applyCustomDate() {
+  const f = document.getElementById('fromDate').value;
+  const t = document.getElementById('toDate').value;
+  if (!f || !t) return;
+  activeFilter = 'custom';
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  filteredData = applyFilter(allData, 'custom', new Date(f), new Date(t));
+  render();
+}
+
+// ── LOAD DATA FROM GOOGLE SHEETS CSV ──
+async function loadData() {
+  if (!SHEET_CSV_URL) {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    return;
+  }
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  document.getElementById('loadingText').textContent = 'Fetching live data…';
+
+  try {
+    const url = SHEET_CSV_URL + '&t=' + Date.now(); // cache bust
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const csv = await res.text();
+    allData = parseCSV(csv);
+    filteredData = applyFilter(allData, activeFilter);
+    render();
+    document.getElementById('lastUpdated').textContent =
+      'Updated ' + new Date().toLocaleTimeString('en-IN');
+    document.getElementById('loadingOverlay').classList.add('hidden');
+  } catch(e) {
+    showToast('Failed to fetch data. Check the Sheet URL & make sure it is published.');
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    if (!allData.length) renderEmpty();
+  } finally {
+    btn.classList.remove('spinning');
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) { // skip header row
+    const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g,'').trim());
+    if (cols.length >= 5 && cols[0]) rows.push(cols);
+  }
+  return rows;
+}
+
+// ── RENDER ALL ──
+function render() {
+  renderKPIs();
+  renderJCChart();
+  renderTrendChart();
+  renderJPTable();
+  renderLeadChart();
+  renderEmpTable();
+  renderRecentFeed();
+  renderAwarenessChart();
+}
+function renderEmpty() {
+  document.getElementById('loadingOverlay').classList.add('hidden');
+  document.getElementById('kpi_total').textContent = '0';
+}
+
+// ── KPIs ──
+function renderKPIs() {
+  const d = filteredData;
+  const total = d.length;
+  const airfiber = d.filter(r => r[COL.airfiber]==='Yes').length;
+  const mnp = d.filter(r => r[COL.mnp]==='Yes').length;
+  const todayStr = today().toISOString().slice(0,10);
+  const todayRows = allData.filter(r => r[COL.date] === todayStr);
+  const jpams = new Set(todayRows.map(r => r[COL.jp_name])).size;
+  const geo = d.filter(r => r[COL.geo_status]==='success').length;
+  const appt = d.filter(r => r[COL.appt_date] && r[COL.appt_date]!=='N/A' && r[COL.appt_date]!=='').length;
+
+  document.getElementById('kpi_total').textContent = total;
+  document.getElementById('kpi_total_sub').textContent =
+    activeFilter==='today' ? 'Today' : activeFilter==='week' ? 'This week' : 'Filtered period';
+  document.getElementById('kpi_airfiber').textContent = airfiber;
+  document.getElementById('kpi_airfiber_sub').textContent =
+    total ? Math.round(airfiber/total*100)+'% of surveys' : '0%';
+  document.getElementById('kpi_mnp').textContent = mnp;
+  document.getElementById('kpi_mnp_sub').textContent =
+    total ? Math.round(mnp/total*100)+'% of surveys' : '0%';
+  document.getElementById('kpi_jpams').textContent = jpams;
+  document.getElementById('kpi_geo').textContent = geo;
+  document.getElementById('kpi_appt').textContent = appt;
+}
+
+// ── JC CHART ──
+function renderJCChart() {
+  const counts = {};
+  filteredData.forEach(r => {
+    const jc = r[COL.jc_name] || 'Unknown';
+    counts[jc] = (counts[jc]||0) + 1;
+  });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const labels = sorted.map(x=>x[0]);
+  const vals   = sorted.map(x=>x[1]);
+  document.getElementById('jcBadge').textContent = labels.length + ' JCs';
+
+  const colors = ['#2E7EF7','#00E5A0','#FF8C42','#00D4FF','#A855F7','#FF4B6E',
+                  '#FFD700','#4ECDC4','#FF6B9D','#C77DFF'];
+
+  if (charts.jc) charts.jc.destroy();
+  charts.jc = new Chart(document.getElementById('jcChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: vals,
+        backgroundColor: labels.map((_,i) => colors[i % colors.length] + '33'),
+        borderColor:      labels.map((_,i) => colors[i % colors.length]),
+        borderWidth: 1.5,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y + ' surveys' }}},
+      scales: {
+        x: { ticks: { color: '#7A90B8', font:{size:10}, maxRotation:30 },
+             grid: { color: 'rgba(255,255,255,0.04)' }},
+        y: { ticks: { color: '#7A90B8', font:{size:10}, stepSize:1 },
+             grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+// ── TREND CHART ──
+function renderTrendChart() {
+  const days = 14;
+  const labels = [], vals = [];
+  for (let i = days-1; i >= 0; i--) {
+    const d = daysAgo(i);
+    const str = d.toISOString().slice(0,10);
+    labels.push(fmt(d));
+    vals.push(allData.filter(r => r[COL.date]===str).length);
+  }
+
+  if (charts.trend) charts.trend.destroy();
+  charts.trend = new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: vals,
+        borderColor: '#2E7EF7',
+        backgroundColor: 'rgba(46,126,247,0.08)',
+        borderWidth: 2,
+        pointBackgroundColor: '#2E7EF7',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#7A90B8', font:{size:9}, maxRotation:45 },
+             grid: { color: 'rgba(255,255,255,0.04)' }},
+        y: { ticks: { color: '#7A90B8', font:{size:10}, stepSize:1 },
+             grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+// ── JP TABLE ──
+let jpData = [];
+function renderJPTable() {
+  const counts = {};
+  filteredData.forEach(r => {
+    const key = r[COL.jp_name] || 'Unknown';
+    if (!counts[key]) counts[key] = { name: key, jc: r[COL.jc_name]||'—', surveys:0, airfiber:0, mnp:0 };
+    counts[key].surveys++;
+    if (r[COL.airfiber]==='Yes') counts[key].airfiber++;
+    if (r[COL.mnp]==='Yes') counts[key].mnp++;
+  });
+  jpData = Object.values(counts).sort((a,b)=>b.surveys-a.surveys);
+  renderJPRows();
+}
+function renderJPRows() {
+  const metric = jpMetric;
+  const sorted = [...jpData].sort((a,b)=>b[metric]-a[metric]);
+  const max = sorted[0]?.[metric] || 1;
+  const colorMap = { surveys:'#2E7EF7', airfiber:'#00E5A0', mnp:'#FF8C42' };
+  const body = document.getElementById('jpTableBody');
+  if (!sorted.length) {
+    body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px;">No data</td></tr>';
+    return;
+  }
+  body.innerHTML = sorted.map((jp, i) => `
+    <tr>
+      <td><span class="rank-badge ${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n'}">${i+1}</span></td>
+      <td style="font-weight:600;">${jp.name}</td>
+      <td style="color:var(--text2);font-size:11px;">${jp.jc}</td>
+      <td style="font-family:var(--mono);color:${colorMap[metric]};">${jp[metric]}</td>
+      <td>
+        <div class="bar-cell">
+          <div class="mini-bar-wrap">
+            <div class="mini-bar" style="width:${Math.round(jp[metric]/max*100)}%;background:${colorMap[metric]};"></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+function jpTab(metric, btn) {
+  jpMetric = metric;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderJPRows();
+}
+
+// ── LEAD CHART ──
+function renderLeadChart() {
+  const d = filteredData;
+  const total = d.length || 1;
+  const af_y = d.filter(r=>r[COL.airfiber]==='Yes').length;
+  const mnp_y = d.filter(r=>r[COL.mnp]==='Yes').length;
+  const both = d.filter(r=>r[COL.airfiber]==='Yes'&&r[COL.mnp]==='Yes').length;
+  const neither = d.filter(r=>r[COL.airfiber]==='No'&&r[COL.mnp]==='No').length;
+
+  if (charts.lead) charts.lead.destroy();
+  charts.lead = new Chart(document.getElementById('leadChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['AirFiber Only','MNP Only','Both','Neither'],
+      datasets: [{
+        data: [af_y-both, mnp_y-both, both, neither],
+        backgroundColor: ['rgba(0,229,160,0.7)','rgba(255,140,66,0.7)',
+                          'rgba(46,126,247,0.7)','rgba(61,80,112,0.5)'],
+        borderColor: ['#00E5A0','#FF8C42','#2E7EF7','#3D5070'],
+        borderWidth: 1.5, hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      cutout: '65%',
+      plugins: {
+        legend: { position:'bottom', labels:{ color:'#7A90B8', font:{size:10}, padding:12, boxWidth:10 }},
+        tooltip: { callbacks: { label: ctx=>' '+ctx.parsed+' customers' }}
+      }
+    }
+  });
+
+  document.getElementById('leadSummary').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="background:var(--green-dim);border-radius:8px;padding:8px 12px;">
+        <div style="font-size:18px;font-weight:700;color:var(--green);font-family:var(--mono);">${af_y}</div>
+        <div style="font-size:10px;color:var(--text2);">AirFiber Leads</div>
+      </div>
+      <div style="background:var(--orange-dim);border-radius:8px;padding:8px 12px;">
+        <div style="font-size:18px;font-weight:700;color:var(--orange);font-family:var(--mono);">${mnp_y}</div>
+        <div style="font-size:10px;color:var(--text2);">MNP Leads</div>
+      </div>
+    </div>
+  `;
+}
+
+// ── EMPLOYEE TABLE ──
+function renderEmpTable() {
+  const data = filteredData.slice().reverse();
+  document.getElementById('empBadge').textContent = data.length + ' records';
+  buildEmpRows(data);
+
+  document.getElementById('searchEmp').oninput = function() {
+    const q = this.value.toLowerCase();
+    const f = data.filter(r =>
+      (r[COL.jp_name]||'').toLowerCase().includes(q) ||
+      (r[COL.jc_name]||'').toLowerCase().includes(q) ||
+      (r[COL.jpam_id]||'').toLowerCase().includes(q) ||
+      (r[COL.customer_name]||'').toLowerCase().includes(q) ||
+      (r[COL.village]||'').toLowerCase().includes(q)
+    );
+    document.getElementById('empBadge').textContent = f.length + ' records';
+    buildEmpRows(f);
+  };
+}
+function buildEmpRows(data) {
+  const body = document.getElementById('empTableBody');
+  if (!data.length) {
+    body.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text3);padding:24px;">No records for selected period</td></tr>';
+    return;
+  }
+  body.innerHTML = data.slice(0,200).map((r,i) => `
+    <tr>
+      <td style="color:var(--text3);font-family:var(--mono);font-size:10px;">${i+1}</td>
+      <td style="font-family:var(--mono);font-size:11px;">${r[COL.date]||'—'}</td>
+      <td style="font-weight:600;">${r[COL.jp_name]||'—'}</td>
+      <td style="font-family:var(--mono);color:var(--text2);font-size:10px;">${r[COL.jpam_id]||'—'}</td>
+      <td style="color:var(--cyan);">${r[COL.jc_name]||'—'}</td>
+      <td>${r[COL.village]||'—'}</td>
+      <td>${r[COL.customer_name]||'—'}</td>
+      <td style="font-family:var(--mono);font-size:11px;">${r[COL.mobile]||'—'}</td>
+      <td><span class="tag ${r[COL.airfiber]==='Yes'?'tag-yes':'tag-no'}">${r[COL.airfiber]||'—'}</span></td>
+      <td><span class="tag ${r[COL.mnp]==='Yes'?'tag-yes':'tag-no'}">${r[COL.mnp]||'—'}</span></td>
+      <td style="font-size:11px;color:var(--text2);">${r[COL.appt_date]&&r[COL.appt_date]!=='N/A'?r[COL.appt_date]:'—'}</td>
+      <td>${r[COL.geo_status]==='success'?
+        `<a class="geo-link" href="${r[COL.geo_url]}" target="_blank">📍 Map</a>`:
+        '<span style="color:var(--text3);font-size:10px;">—</span>'}</td>
+    </tr>
+  `).join('');
+}
+
+// ── RECENT FEED ──
+function renderRecentFeed() {
+  const recent = filteredData.slice().reverse().slice(0, 12);
+  const feed = document.getElementById('recentFeed');
+  document.getElementById('recentBadge').textContent = 'Last ' + recent.length;
+
+  if (!recent.length) {
+    feed.innerHTML = '<div class="empty-state"><div class="ei">📭</div><p>No submissions yet</p></div>';
+    return;
+  }
+  feed.innerHTML = recent.map(r => {
+    const ts = parseDate(r[COL.timestamp]);
+    const leads = [];
+    if (r[COL.airfiber]==='Yes') leads.push('<span class="tag tag-yes">AirFiber ✓</span>');
+    if (r[COL.mnp]==='Yes') leads.push('<span class="tag tag-yes">MNP ✓</span>');
+    return `
+      <div class="feed-item">
+        <div class="feed-dot"></div>
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="feed-name">${r[COL.customer_name]||'Unknown'}</span>
+            <span style="font-size:10px;color:var(--text3);">${r[COL.mobile]||''}</span>
+          </div>
+          <div class="feed-meta">
+            ${r[COL.jp_name]||'—'} · ${r[COL.jc_name]||'—'} · ${r[COL.village]||'—'}
+          </div>
+          ${leads.length ? '<div class="feed-tags">'+leads.join('')+'</div>' : ''}
+        </div>
+        <div style="text-align:right;">
+          <div class="feed-time">${ts ? fmtTime(ts) : r[COL.date]||'—'}</div>
+          ${r[COL.geo_status]==='success'?`<a class="geo-link" href="${r[COL.geo_url]}" target="_blank">📍</a>`:''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── AWARENESS CHART ──
+function renderAwarenessChart() {
+  const d = filteredData;
+  const total = d.length || 1;
+  const metrics = [
+    { label:'5000GB Storage', col:COL.m1, color:'#2E7EF7' },
+    { label:'Unlimited Data', col:COL.m2, color:'#00D4FF' },
+    { label:'JioHotStar',     col:COL.m3, color:'#A855F7' },
+    { label:'1000 Channels',  col:COL.t1, color:'#FF8C42' },
+    { label:'12 OTT Apps',    col:COL.t2, color:'#FF4B6E' },
+    { label:'WiFi at Home',   col:COL.t3, color:'#00E5A0' },
+  ];
+
+  const vals = metrics.map(m => Math.round(d.filter(r=>r[m.col]==='Yes').length/total*100));
+
+  if (charts.awareness) charts.awareness.destroy();
+  charts.awareness = new Chart(document.getElementById('awarenessChart'), {
+    type: 'bar',
+    data: {
+      labels: metrics.map(m=>m.label),
+      datasets: [{
+        label: '% Have It',
+        data: vals,
+        backgroundColor: metrics.map(m=>m.color+'33'),
+        borderColor: metrics.map(m=>m.color),
+        borderWidth: 1.5,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.x+'% of customers'}}
+      },
+      scales:{
+        x:{ticks:{color:'#7A90B8',font:{size:10},callback:v=>v+'%'},
+           grid:{color:'rgba(255,255,255,0.04)'},min:0,max:100},
+        y:{ticks:{color:'#7A90B8',font:{size:10}},
+           grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('errorToast');
+  t.textContent = '⚠ ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 5000);
+}
+
+// ── INIT ──
+window.onload = function() {
+  loadData();
+  // Auto-refresh every 60 seconds
+  setInterval(loadData, 60000);
+};
+</script>
+</body>
+</html>
